@@ -1,12 +1,13 @@
 
 class ANCEIndexer():
     
-    def __init__(self, checkpoint_path, index_path, num_docs=None, verbose=True, segment_size=500_000):
+    def __init__(self, checkpoint_path, index_path, num_docs=None, verbose=True, text_attr="text", segment_size=500_000):
         self.index_path = index_path
         self.checkpoint_path = checkpoint_path
         self.verbose=verbose
         self.num_docs = num_docs
         self.segment_size = segment_size
+        self.text_attr = text_attr
         
     def index(self, generator):
         from ance.utils.util import pad_input_ids
@@ -34,8 +35,9 @@ class ANCEIndexer():
         config, tokenizer, model = load_model(args, self.checkpoint_path)
         docid2docno = []
         def gen_tokenize():
+            text_attr = self.text_attr
             for doc in pt.tqdm(generator, desc="Indexing", unit="d", total=self.num_docs) if self.verbose else generator:
-                contents = doc["content"]
+                contents = doc[text_attr]
                 docid2docno.append(doc["docno"])
                 
                 passage = tokenizer.encode(
