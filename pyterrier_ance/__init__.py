@@ -20,6 +20,9 @@ class ANCEIndexer():
         import os
         # monkey patch ANCE to use the same TQDM as PyTerrier
         ance.drivers.run_ann_data_gen.tqdm = pt.tqdm
+
+        import os
+        os.makedirs(self.index_path)
         
         args = type('', (), {})()
         args.local_rank = -1
@@ -36,7 +39,10 @@ class ANCEIndexer():
         docid2docno = []
         def gen_tokenize():
             text_attr = self.text_attr
-            for doc in pt.tqdm(generator, desc="Indexing", unit="d", total=self.num_docs) if self.verbose else generator:
+            kwargs = {}
+            if self.num_docs is not None:
+                kwargs['total'] = self.num_docs
+            for doc in pt.tqdm(generator, desc="Indexing", unit="d", **kwargs) if self.verbose else generator:
                 contents = doc[text_attr]
                 docid2docno.append(doc["docno"])
                 
@@ -87,7 +93,6 @@ import pickle
 import torch
 from ance.utils.util import pad_input_ids
 import os
-from pyterrier import tqdm
 import pyterrier as pt
 import pandas as pd
 
@@ -107,6 +112,7 @@ class ANCERetrieval(TransformerBase):
         args.n_gpu = torch.cuda.device_count()
         
         self.num_results = num_results
+        from pyterrier import tqdm
 
         #faiss.omp_set_num_threads(16)
         print("Loading model")
@@ -138,7 +144,11 @@ class ANCERetrieval(TransformerBase):
             self.passage_embedding2id = passage_embedding2id
             self.docid2docno = docid2docno
 
+    def __str__(self):
+        return "ANCE"
+
     def transform(self, topics):
+        from pyterrier import tqdm
         queries=[]
         for q in topics["query"].to_list():
             passage = self.tokenizer.encode(
