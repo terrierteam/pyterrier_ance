@@ -1,0 +1,3 @@
+python-terrier
+pandas
+git+https://github.com/cmacdonald/ANCE.git
