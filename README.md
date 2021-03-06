@@ -2,7 +2,7 @@
 
 This is the [PyTerrier](https://github.com/terrier-org/pyterrier) plugin for the [ANCE]https://github.com/microsoft/ANCE/) dense passage retriever.
 
-## Installation
+## Installation
 
 This repostory can be installed using Pip.
 
@@ -58,6 +58,10 @@ pt.Experiment(
 )
 ```
 
+
+## Implementation Details
+
+We use a [fork-ed copy of ANCE](https://github.com/cmacdonald/ANCE/) that makes it pip installable, and addresses other quibbles.
 
 ## Credits
 
