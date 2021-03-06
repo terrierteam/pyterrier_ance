@@ -80,7 +80,7 @@ class ANCEIndexer():
             shard_size.append(len(passage_embedding2id))
             passage_embedding2id = None
             
-        with pt.io.autoopen(os.path.join(self.index_path, "shards"), 'wb') as f:
+        with pt.io.autoopen(os.path.join(self.index_path, "shards.pkl"), 'wb') as f:
             pickle.dump(shard_size, f)
             pickle.dump(docid2docno, f)
         return self.index_path
