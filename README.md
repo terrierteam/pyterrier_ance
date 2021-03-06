@@ -70,7 +70,8 @@ We use a [fork-ed copy of ANCE](https://github.com/cmacdonald/ANCE/) that makes 
 
 ## References
 
-  - Approximate Nearest Neighbor Negative Contrastive Learning for Dense Text Retrieval. Lee Xiong*, Chenyan Xiong*, Ye Li, Kwok-Fung Tang, Jialin Liu, Paul Bennett, Junaid Ahmed, Arnold Overwijk. https://arxiv.org/pdf/2007.00808.pdf
+  - [Xiong20] Approximate Nearest Neighbor Negative Contrastive Learning for Dense Text Retrieval. Lee Xiong*, Chenyan Xiong*, Ye Li, Kwok-Fung Tang, Jialin Liu, Paul Bennett, Junaid Ahmed, Arnold Overwijk. https://arxiv.org/pdf/2007.00808.pdf
+  - [Macdonald20]: Craig Macdonald, Nicola Tonellotto. Declarative Experimentation inInformation Retrieval using PyTerrier. Craig Macdonald and Nicola Tonellotto. In Proceedings of ICTIR 2020. https://arxiv.org/abs/2007.14271
 
 ## Credits
 
