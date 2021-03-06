@@ -44,14 +44,14 @@ indexer.index(dataset.get_corpus_iter())
 You can instantiate the retrieval transformer, again by specifying the checkpoint location and the index location:
 
 ```python
-retr = pyterrier_ance.ANCERetrieval("/path/to/checkpoint", "/path/to/anceindex")
+anceretr = pyterrier_ance.ANCERetrieval("/path/to/checkpoint", "/path/to/anceindex")
 ```
 
 Thereafter, you can use it in the normal PyTerrier way, for instance in an experiment:
 
 ```python
 pt.Experiment(
-    [retr], 
+    [anceretr], 
     dataset.get_topics(), 
     dataset.get_qrels(), 
     eval_metrics=["map"]
