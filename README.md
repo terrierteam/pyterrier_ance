@@ -68,6 +68,10 @@ Checkout out the notebooks, even on Colab:
 
 We use a [fork-ed copy of ANCE](https://github.com/cmacdonald/ANCE/) that makes it pip installable, and addresses other quibbles.
 
+## References
+
+  - Approximate Nearest Neighbor Negative Contrastive Learning for Dense Text Retrieval. Lee Xiong*, Chenyan Xiong*, Ye Li, Kwok-Fung Tang, Jialin Liu, Paul Bennett, Junaid Ahmed, Arnold Overwijk. https://arxiv.org/pdf/2007.00808.pdf
+
 ## Credits
 
 - Craig Macdonald, University of Glasgow
