@@ -58,6 +58,11 @@ pt.Experiment(
 )
 ```
 
+## Examples
+
+Checkout out the notebooks, even on Colab:
+
+ - [Vaswani Corpus](pyterrier_ance_vaswani.ipynb) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/terrierteam/pyterrier_ance/blob/master/pyterrier_ance_vaswani.ipynb)
 
 ## Implementation Details
 
