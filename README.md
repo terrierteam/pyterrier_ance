@@ -1,6 +1,6 @@
 # PyTerrier_ANCE
 
-This is the [PyTerrier](https://github.com/terrier-org/pyterrier) plugin for the [ANCE]https://github.com/microsoft/ANCE/) dense passage retriever.
+This is the [PyTerrier](https://github.com/terrier-org/pyterrier) plugin for the [ANCE](https://github.com/microsoft/ANCE/) dense passage retriever.
 
 ## Installation
 
