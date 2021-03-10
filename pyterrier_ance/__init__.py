@@ -183,7 +183,7 @@ class ANCERetrieval(TransformerBase):
     def _calc_scores(self, 
         query_embedding2id,
         passage_embedding2id,
-        I_nearest_neighbor, I_scores, offset=0, qid2q):
+        I_nearest_neighbor, I_scores, offset=0, qid2q=None):
         """
             based on drivers.run_ann_data_gen.EvalDevQuery
         """
