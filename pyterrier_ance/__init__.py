@@ -150,7 +150,8 @@ class ANCERetrieval(TransformerBase):
     def transform(self, topics):
         from pyterrier import tqdm
         queries=[]
-        for q in topics["query"].to_list():
+        qid2q = {}
+        for q, qid in zip(topics["query"].to_list(), topics["qid"].to_list()):
             passage = self.tokenizer.encode(
                 q,
                 add_special_tokens=True,
@@ -160,6 +161,7 @@ class ANCERetrieval(TransformerBase):
             passage_len = min(len(passage), self.args.max_query_length)
             input_id_b = pad_input_ids(passage, self.args.max_query_length)
             queries.append([passage_len, input_id_b])
+            qid2query[qid] = q
         
         print("***** inference of %d queries *****" % len(queries))
         dev_query_embedding, dev_query_embedding2id = StreamInferenceDoc(self.args, self.model, GetProcessingFn(
@@ -170,7 +172,7 @@ class ANCERetrieval(TransformerBase):
         rtr = []
         for i, offset in enumerate(tqdm(self.shard_offsets, unit="shard")):
             scores, neighbours = self.cpu_index[i].search(dev_query_embedding, self.num_results)
-            res = self._calc_scores(topics["qid"].values, self.passage_embedding2id[i], neighbours, scores, offset)
+            res = self._calc_scores(topics["qid"].values, self.passage_embedding2id[i], neighbours, scores, offset, qid2q)
             rtr.append(res)
         rtr = pd.concat(rtr)
         rtr = add_ranks(rtr)
@@ -181,7 +183,7 @@ class ANCERetrieval(TransformerBase):
     def _calc_scores(self, 
         query_embedding2id,
         passage_embedding2id,
-        I_nearest_neighbor, I_scores, offset=0):
+        I_nearest_neighbor, I_scores, offset=0, qid2q):
         """
             based on drivers.run_ann_data_gen.EvalDevQuery
         """
@@ -204,6 +206,6 @@ class ANCERetrieval(TransformerBase):
                     # this check handles multiple vector per document
                     rank += 1
                     docno = self.docid2docno[pred_pid+offset]
-                    rtr.append([query_id, pred_pid, docno, rank, scores[i]])
+                    rtr.append([query_id, qid2q[query_id], pred_pid, docno, rank, scores[i]])
                     seen_pid.add(pred_pid)
-        return pd.DataFrame(rtr, columns=["qid", "docid", "docno", "rank", "score"])
+        return pd.DataFrame(rtr, columns=["qid", "query", "docid", "docno", "rank", "score"])
