@@ -1,5 +1,6 @@
+from pyterrier.transformer import TransformerBase
 
-class ANCEIndexer():
+class ANCEIndexer(TransformerBase):
     
     def __init__(self, checkpoint_path, index_path, num_docs=None, verbose=True, text_attr="text", segment_size=500_000):
         self.index_path = index_path
@@ -86,7 +87,6 @@ class ANCEIndexer():
         return self.index_path
 
 import faiss
-from pyterrier.transformer import TransformerBase
 from pyterrier.model import add_ranks
 from ance.drivers.run_ann_data_gen import StreamInferenceDoc, load_model, GetProcessingFn
 import pickle
