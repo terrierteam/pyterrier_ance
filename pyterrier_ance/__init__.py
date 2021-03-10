@@ -161,7 +161,7 @@ class ANCERetrieval(TransformerBase):
             passage_len = min(len(passage), self.args.max_query_length)
             input_id_b = pad_input_ids(passage, self.args.max_query_length)
             queries.append([passage_len, input_id_b])
-            qid2query[qid] = q
+            qid2q[qid] = q
         
         print("***** inference of %d queries *****" % len(queries))
         dev_query_embedding, dev_query_embedding2id = StreamInferenceDoc(self.args, self.model, GetProcessingFn(
