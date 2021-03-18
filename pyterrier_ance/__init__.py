@@ -1,8 +1,3 @@
-def warn(*args, **kwargs):
-    pass
-import warnings
-warnings.warn = warn
-
 class ANCEIndexer():
     
     def __init__(self, checkpoint_path, index_path, num_docs=None, verbose=True, text_attr="text", segment_size=500_000):
