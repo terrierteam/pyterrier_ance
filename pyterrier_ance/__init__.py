@@ -1,3 +1,7 @@
+def warn(*args, **kwargs):
+    pass
+import warnings
+warnings.warn = warn
 
 class ANCEIndexer():
     
@@ -9,7 +13,7 @@ class ANCEIndexer():
         self.segment_size = segment_size
         self.text_attr = text_attr
         
-    def index(self, generator):
+    def index(self, generator):        
         from ance.utils.util import pad_input_ids
         import torch
         import more_itertools
