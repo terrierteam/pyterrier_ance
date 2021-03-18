@@ -49,6 +49,7 @@ class ANCEIndexer():
                     contents,
                     add_special_tokens=True,
                     max_length=args.max_seq_length,
+                    truncation=True
                 )
                 passage_len = min(len(passage), args.max_seq_length)
                 input_id_b = pad_input_ids(passage, args.max_seq_length)
