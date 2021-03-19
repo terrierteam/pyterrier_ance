@@ -155,6 +155,7 @@ class ANCERetrieval(TransformerBase):
                 q,
                 add_special_tokens=True,
                 max_length=self.args.max_seq_length,
+                truncation=True,
             )
                 
             passage_len = min(len(passage), self.args.max_query_length)
