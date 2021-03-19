@@ -1,4 +1,3 @@
-
 class ANCEIndexer():
     
     def __init__(self, checkpoint_path, index_path, num_docs=None, verbose=True, text_attr="text", segment_size=500_000):
@@ -9,7 +8,7 @@ class ANCEIndexer():
         self.segment_size = segment_size
         self.text_attr = text_attr
         
-    def index(self, generator):
+    def index(self, generator):        
         from ance.utils.util import pad_input_ids
         import torch
         import more_itertools
@@ -50,6 +49,7 @@ class ANCEIndexer():
                     contents,
                     add_special_tokens=True,
                     max_length=args.max_seq_length,
+                    truncation=True
                 )
                 passage_len = min(len(passage), args.max_seq_length)
                 input_id_b = pad_input_ids(passage, args.max_seq_length)
@@ -155,6 +155,7 @@ class ANCERetrieval(TransformerBase):
                 q,
                 add_special_tokens=True,
                 max_length=self.args.max_seq_length,
+                truncation=True,
             )
                 
             passage_len = min(len(passage), self.args.max_query_length)
