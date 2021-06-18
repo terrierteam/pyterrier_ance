@@ -170,7 +170,7 @@ class ANCERetrieval(TransformerBase):
         rtr = []
         for i, offset in enumerate(tqdm(self.shard_offsets, unit="shard")):
             scores, neighbours = self.cpu_index[i].search(dev_query_embedding, self.num_results)
-            res = self._calc_scores(topics["qid"].values, self.passage_embedding2id[i], neighbours, scores, offset)
+            res = self._calc_scores(topics["qid"].values, self.passage_embedding2id[i], neighbours, scores, self.num_results, offset=offset)
             rtr.append(res)
         rtr = pd.concat(rtr)
         rtr = add_ranks(rtr)
@@ -181,7 +181,7 @@ class ANCERetrieval(TransformerBase):
     def _calc_scores(self, 
         query_embedding2id,
         passage_embedding2id,
-        I_nearest_neighbor, I_scores, offset=0):
+        I_nearest_neighbor, I_scores, num_results=50, offset=0):
         """
             based on drivers.run_ann_data_gen.EvalDevQuery
         """
@@ -193,7 +193,7 @@ class ANCERetrieval(TransformerBase):
             
             top_ann_pid = I_nearest_neighbor[query_idx, :].copy()
             scores = I_scores[query_idx, :].copy()
-            selected_ann_idx = top_ann_pid[:50] #TODO: why 50?!
+            selected_ann_idx = top_ann_pid[:num_results] #only take top num_results from each shard. this can be lower than self.num_results for unsafe retrieval
             rank = 0
             seen_pid = set()
             
