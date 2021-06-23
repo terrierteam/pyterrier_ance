@@ -58,6 +58,14 @@ pt.Experiment(
 )
 ```
 
+You can also use ANCE as a re-ranker using `ANCEReRanker`.
+
+```python
+ance_reranker = pyterrier_ance.ANCEReRanker("/path/to/checkpoint")
+# You'll need to use this in a retrieval pipeline that includes the document text, e.g.:
+# bm25 >> pt.text.get_text(dataset, 'text') >> ance_reranker
+```
+
 ## Examples
 
 Checkout out the notebooks, even on Colab:
