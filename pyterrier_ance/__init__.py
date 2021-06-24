@@ -277,7 +277,7 @@ class ANCETextScorer(TransformerBase):
             self.args, query=False), "transform", docs, is_query_inference=False)
 
         # project out the query representations (see comment above)
-        query_embeddings = np.choose(query_idxs, query_embeddings)
+        query_embeddings = np.choose(np.array(query_idxs), query_embeddings)
 
         scores = (query_embeddings * passage_embeddings).sum(axis=1)
 
