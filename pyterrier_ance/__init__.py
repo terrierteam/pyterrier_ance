@@ -95,6 +95,7 @@ from ance.utils.util import pad_input_ids
 import os
 import pyterrier as pt
 import pandas as pd
+import numpy as np
 
 class ANCERetrieval(TransformerBase):
 
@@ -233,23 +234,32 @@ class ANCETextScorer(TransformerBase):
         return "ANCE"
 
     def transform(self, df):
-        return pt.apply.by_query(self._transform_by_query)(df)
-
-    def _transform_by_query(self, query_df):
         queries=[]
         docs = []
+        idx_by_query = {}
+        query_idxs = []
+        # We do not want to redo the calculation of query representations, but due to logging
+        # in the ance package, doing a groupby or pt.apply.by_query here will result in
+        # excessive log messages. So we instead calculate each query rep once and keep track of
+        # the correspeonding index so we can project back out the original sequence using np.choose
+        for q in df["query"].to_list():
+            if q in idx_by_query:
+                query_idxs.append(idx_by_query[q])
+            else:
+                passage = self.tokenizer.encode(
+                    q,
+                    add_special_tokens=True,
+                    max_length=self.args.max_seq_length,
+                )
+                    
+                passage_len = min(len(passage), self.args.max_query_length)
+                input_id_b = pad_input_ids(passage, self.args.max_query_length)
+                queries.append([passage_len, input_id_b])
+                qidx = len(idx_by_query)
+                idx_by_query[q] = qidx
+                query_idxs.append(qidx)
 
-        # only 1 query
-        query_tok = self.tokenizer.encode(
-            query_df['query'].values[0],
-            add_special_tokens=True,
-            max_length=self.args.max_seq_length,
-        )
-        query_len = min(len(query_tok), self.args.max_query_length)
-        query_input_id = pad_input_ids(query_tok, self.args.max_query_length)
-        queries.append([query_len, query_input_id])
-
-        for d in query_df[self.text_field].to_list():
+        for d in df[self.text_field].to_list():
             passage = self.tokenizer.encode(
                 d,
                 add_special_tokens=True,
@@ -260,12 +270,15 @@ class ANCETextScorer(TransformerBase):
             input_id_b = pad_input_ids(passage, self.args.max_seq_length)
             docs.append([passage_len, input_id_b])
         
-        query_embedding, _ = StreamInferenceDoc(self.args, self.model, GetProcessingFn(
+        query_embeddings, _ = StreamInferenceDoc(self.args, self.model, GetProcessingFn(
              self.args, query=True), "transform", queries, is_query_inference=True)
 
         passage_embeddings, _ = StreamInferenceDoc(self.args, self.model, GetProcessingFn(
             self.args, query=False), "transform", docs, is_query_inference=False)
 
-        scores = (query_embedding * passage_embeddings).sum(axis=1)
+        # project out the query representations (see comment above)
+        query_embeddings = np.choose(query_idxs, query_embeddings)
 
-        return query_df.assign(score=scores)
+        scores = (query_embeddings * passage_embeddings).sum(axis=1)
+
+        return df.assign(score=scores)
