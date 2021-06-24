@@ -95,6 +95,7 @@ from ance.utils.util import pad_input_ids
 import os
 import pyterrier as pt
 import pandas as pd
+import numpy as np
 
 class ANCERetrieval(TransformerBase):
 
@@ -172,7 +173,7 @@ class ANCERetrieval(TransformerBase):
         rtr = []
         for i, offset in enumerate(tqdm(self.shard_offsets, unit="shard")):
             scores, neighbours = self.cpu_index[i].search(dev_query_embedding, self.num_results)
-            res = self._calc_scores(topics["qid"].values, self.passage_embedding2id[i], neighbours, scores, offset, qid2q)
+            res = self._calc_scores(topics["qid"].values, self.passage_embedding2id[i], neighbours, scores, self.num_results, offset=offset, offset, qid2q=qid2q)
             rtr.append(res)
         rtr = pd.concat(rtr)
         rtr = add_ranks(rtr)
@@ -183,7 +184,7 @@ class ANCERetrieval(TransformerBase):
     def _calc_scores(self, 
         query_embedding2id,
         passage_embedding2id,
-        I_nearest_neighbor, I_scores, offset=0, qid2q=None):
+        I_nearest_neighbor, I_scores, num_results=50, offset=0, qid2q=None):
         """
             based on drivers.run_ann_data_gen.EvalDevQuery
         """
@@ -195,7 +196,7 @@ class ANCERetrieval(TransformerBase):
             
             top_ann_pid = I_nearest_neighbor[query_idx, :].copy()
             scores = I_scores[query_idx, :].copy()
-            selected_ann_idx = top_ann_pid[:50] #TODO: why 50?!
+            selected_ann_idx = top_ann_pid[:num_results] #only take top num_results from each shard. this can be lower than self.num_results for unsafe retrieval
             rank = 0
             seen_pid = set()
             
@@ -209,3 +210,77 @@ class ANCERetrieval(TransformerBase):
                     rtr.append([query_id, qid2q[query_id], pred_pid, docno, rank, scores[i]])
                     seen_pid.add(pred_pid)
         return pd.DataFrame(rtr, columns=["qid", "query", "docid", "docno", "rank", "score"])
+
+
+class ANCETextScorer(TransformerBase):
+
+    def __init__(self, checkpoint_path=None, text_field='text'):
+        self.args = type('', (), {})()
+        args = self.args
+        args.local_rank = -1
+        args.model_type = 'rdot_nll'
+        args.cache_dir  = None
+        args.no_cuda = False
+        args.max_query_length = 64
+        args.max_seq_length = 128
+        args.per_gpu_eval_batch_size = 128
+        args.device = torch.device("cuda" if torch.cuda.is_available() and not args.no_cuda else "cpu")
+        args.n_gpu = torch.cuda.device_count()
+
+        config, tokenizer, model = load_model(self.args, checkpoint_path)
+        self.model = model
+        self.tokenizer = tokenizer
+        self.text_field = text_field
+
+    def __str__(self):
+        return "ANCE"
+
+    def transform(self, df):
+        queries=[]
+        docs = []
+        idx_by_query = {}
+        query_idxs = []
+        # We do not want to redo the calculation of query representations, but due to logging
+        # in the ance package, doing a groupby or pt.apply.by_query here will result in
+        # excessive log messages. So we instead calculate each query rep once and keep track of
+        # the correspeonding index so we can project back out the original sequence
+        for q in df["query"].to_list():
+            if q in idx_by_query:
+                query_idxs.append(idx_by_query[q])
+            else:
+                passage = self.tokenizer.encode(
+                    q,
+                    add_special_tokens=True,
+                    max_length=self.args.max_seq_length,
+                )
+                    
+                passage_len = min(len(passage), self.args.max_query_length)
+                input_id_b = pad_input_ids(passage, self.args.max_query_length)
+                queries.append([passage_len, input_id_b])
+                qidx = len(idx_by_query)
+                idx_by_query[q] = qidx
+                query_idxs.append(qidx)
+
+        for d in df[self.text_field].to_list():
+            passage = self.tokenizer.encode(
+                d,
+                add_special_tokens=True,
+                max_length=self.args.max_seq_length,
+            )
+                
+            passage_len = min(len(passage), self.args.max_seq_length)
+            input_id_b = pad_input_ids(passage, self.args.max_seq_length)
+            docs.append([passage_len, input_id_b])
+        
+        query_embeddings, _ = StreamInferenceDoc(self.args, self.model, GetProcessingFn(
+             self.args, query=True), "transform", queries, is_query_inference=True)
+
+        passage_embeddings, _ = StreamInferenceDoc(self.args, self.model, GetProcessingFn(
+            self.args, query=False), "transform", docs, is_query_inference=False)
+
+        # project out the query representations (see comment above)
+        query_embeddings = query_embeddings[query_idxs]
+
+        scores = (query_embeddings * passage_embeddings).sum(axis=1)
+
+        return df.assign(score=scores)
