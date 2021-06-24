@@ -209,7 +209,7 @@ class ANCERetrieval(TransformerBase):
         return pd.DataFrame(rtr, columns=["qid", "docid", "docno", "rank", "score"])
 
 
-class ANCEReRanker(TransformerBase):
+class ANCETextScorer(TransformerBase):
 
     def __init__(self, checkpoint_path=None, text_field='text'):
         self.args = type('', (), {})()
@@ -233,21 +233,23 @@ class ANCEReRanker(TransformerBase):
         return "ANCE"
 
     def transform(self, df):
-        from pyterrier import tqdm
+        return pt.apply.by_query(self._transform_by_query)
+
+    def _transform_by_query(self, query_df):
         queries=[]
         docs = []
-        for q in df["query"].to_list():
-            passage = self.tokenizer.encode(
-                q,
-                add_special_tokens=True,
-                max_length=self.args.max_seq_length,
-            )
-                
-            passage_len = min(len(passage), self.args.max_query_length)
-            input_id_b = pad_input_ids(passage, self.args.max_query_length)
-            queries.append([passage_len, input_id_b])
 
-        for d in df[self.text_field].to_list():
+        # only 1 query
+        query_tok = self.tokenizer.encode(
+            query_df['query'].values[0],
+            add_special_tokens=True,
+            max_length=self.args.max_seq_length,
+        )
+        query_len = min(len(query_tok), self.args.max_query_length)
+        query_input_id = pad_input_ids(query_tok, self.args.max_query_length)
+        queries.append([query_len, query_input_id])
+
+        for d in query_df[self.text_field].to_list():
             passage = self.tokenizer.encode(
                 d,
                 add_special_tokens=True,
@@ -258,12 +260,12 @@ class ANCEReRanker(TransformerBase):
             input_id_b = pad_input_ids(passage, self.args.max_seq_length)
             docs.append([passage_len, input_id_b])
         
-        dev_query_embedding, dev_query_embedding2id = StreamInferenceDoc(self.args, self.model, GetProcessingFn(
+        query_embedding, _ = StreamInferenceDoc(self.args, self.model, GetProcessingFn(
              self.args, query=True), "transform", queries, is_query_inference=True)
 
-        passage_embedding, passage_embedding2id = StreamInferenceDoc(self.args, self.model, GetProcessingFn(
+        passage_embeddings, _ = StreamInferenceDoc(self.args, self.model, GetProcessingFn(
             self.args, query=False), "transform", docs, is_query_inference=False)
 
-        scores = (dev_query_embedding * passage_embedding).sum(axis=1)
+        scores = (query_embedding * passage_embeddings).sum(axis=1)
 
-        return df.assign(score=scores)
+        return query_df.assign(score=scores)
