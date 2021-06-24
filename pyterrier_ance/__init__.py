@@ -233,7 +233,7 @@ class ANCETextScorer(TransformerBase):
         return "ANCE"
 
     def transform(self, df):
-        return pt.apply.by_query(self._transform_by_query)
+        return pt.apply.by_query(self._transform_by_query)(df)
 
     def _transform_by_query(self, query_df):
         queries=[]

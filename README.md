@@ -61,7 +61,7 @@ pt.Experiment(
 You can also use ANCE as a re-ranker to score text (e.g., as a re-ranker) using `ANCETextScorer`.
 
 ```python
-ance_text_scorer = pyterrier_ance.ANCEReRanker("/path/to/checkpoint")
+ance_text_scorer = pyterrier_ance.ANCETextScorer("/path/to/checkpoint")
 # You'll need to use this in a retrieval pipeline that includes the document text, e.g.:
 # bm25 >> pt.text.get_text(dataset, 'text') >> ance_text_scorer
 ```
