@@ -241,7 +241,7 @@ class ANCETextScorer(TransformerBase):
         # We do not want to redo the calculation of query representations, but due to logging
         # in the ance package, doing a groupby or pt.apply.by_query here will result in
         # excessive log messages. So we instead calculate each query rep once and keep track of
-        # the correspeonding index so we can project back out the original sequence using np.choose
+        # the correspeonding index so we can project back out the original sequence
         for q in df["query"].to_list():
             if q in idx_by_query:
                 query_idxs.append(idx_by_query[q])
@@ -277,7 +277,7 @@ class ANCETextScorer(TransformerBase):
             self.args, query=False), "transform", docs, is_query_inference=False)
 
         # project out the query representations (see comment above)
-        query_embeddings = np.choose(np.array(query_idxs), query_embeddings)
+        query_embeddings = query_embeddings[query_idxs]
 
         scores = (query_embeddings * passage_embeddings).sum(axis=1)
 
