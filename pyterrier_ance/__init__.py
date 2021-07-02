@@ -173,7 +173,7 @@ class ANCERetrieval(TransformerBase):
         rtr = []
         for i, offset in enumerate(tqdm(self.shard_offsets, unit="shard")):
             scores, neighbours = self.cpu_index[i].search(dev_query_embedding, self.num_results)
-            res = self._calc_scores(topics["qid"].values, self.passage_embedding2id[i], neighbours, scores, self.num_results, offset=offset, offset, qid2q=qid2q)
+            res = self._calc_scores(topics["qid"].values, self.passage_embedding2id[i], neighbours, scores, num_results=self.num_results, offset=offset, qid2q=qid2q)
             rtr.append(res)
         rtr = pd.concat(rtr)
         rtr = add_ranks(rtr)
