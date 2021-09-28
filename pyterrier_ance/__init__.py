@@ -150,7 +150,7 @@ class ANCERetrieval(TransformerBase):
 
         #faiss.omp_set_num_threads(16)
         
-        config, tokenizer, model = load_model(self.args, self.checkpoint_path)
+        config, tokenizer, model = _load_model(self.args, self.checkpoint_path)
         self.model = model
         self.tokenizer = tokenizer
         if index_path is not None:
