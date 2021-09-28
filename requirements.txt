@@ -1,3 +1,4 @@
-python-terrier>=0.5.0
+python-terrier>=0.7.0
 pandas
 git+https://github.com/cmacdonald/ANCE.git
+tensorboardX
