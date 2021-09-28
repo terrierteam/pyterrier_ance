@@ -1,3 +1,5 @@
+from pyterrier.datasets import Dataset
+from typing import Union
 
 class ANCEIndexer():
     
@@ -6,6 +8,8 @@ class ANCEIndexer():
         self.checkpoint_path = checkpoint_path
         self.verbose=verbose
         self.num_docs = num_docs
+        if self.verbose and self.num_docs is None:
+            raise ValueError("if verbose=True, num_docs must be set")
         self.segment_size = segment_size
         self.text_attr = text_attr
         
@@ -35,6 +39,26 @@ class ANCEIndexer():
         args.per_gpu_eval_batch_size = 128
         args.device = torch.device("cuda" if torch.cuda.is_available() and not args.no_cuda else "cpu")
         args.n_gpu = torch.cuda.device_count()
+
+        # support downloads of checkpoints
+        if self.checkpoint_path.startswith("http"):
+            print("Downloading checkpoint %s" % self.checkpoint_path)
+            import tempfile, wget
+            targetZip = os.path.join(tempfile.mkdtemp(), 'checkpoint.zip')
+            wget.download(self.checkpoint_path, targetZip)
+            self.checkpoint_path = targetZip
+        
+        # support zip files of checkpoints
+        if self.checkpoint_path.endswith(".zip"):
+            import tempfile, zipfile
+            print("Extracting checkpoint %s" % self.checkpoint_path)
+            targetDir = tempfile.mkdtemp()
+            zipfile.ZipFile(self.checkpoint_path).extractall(targetDir)
+            #todo fix this
+            self.checkpoint_path = os.path.join(targetDir, "Passage ANCE(FirstP) Checkpoint")
+
+        print("Loading checkpoint %s" % self.checkpoint_path)
+
         config, tokenizer, model = load_model(args, self.checkpoint_path)
         docid2docno = []
         def gen_tokenize():
@@ -111,12 +135,31 @@ class ANCERetrieval(TransformerBase):
         args.device = torch.device("cuda" if torch.cuda.is_available() and not args.no_cuda else "cpu")
         args.n_gpu = torch.cuda.device_count()
         
+        self.checkpoint_path = checkpoint_path
         self.num_results = num_results
         from pyterrier import tqdm
 
         #faiss.omp_set_num_threads(16)
-        print("Loading model")
-        config, tokenizer, model = load_model(self.args, checkpoint_path)
+        
+        # support downloads of checkpoints
+        if self.checkpoint_path.startswith("http"):
+            print("Downloading checkpoint %s" % self.checkpoint_path)
+            import tempfile, wget
+            targetZip = os.path.join(tempfile.mkdtemp(), 'checkpoint.zip')
+            wget.download(self.checkpoint_path, targetZip)
+            self.checkpoint_path = targetZip
+        
+        # support zip files of checkpoints
+        if self.checkpoint_path.endswith(".zip"):
+            import tempfile, zipfile
+            print("Extracting checkpoint %s" % self.checkpoint_path)
+            targetDir = tempfile.mkdtemp()
+            zipfile.ZipFile(self.checkpoint_path).extractall(targetDir)
+            #todo fix this
+            self.checkpoint_path = os.path.join(targetDir, "Passage ANCE(FirstP) Checkpoint")
+
+        print("Loading model %s" % self.checkpoint_path)
+        config, tokenizer, model = load_model(self.args, self.checkpoint_path)
         self.model = model
         self.tokenizer = tokenizer
         if index_path is not None:
@@ -143,6 +186,26 @@ class ANCERetrieval(TransformerBase):
             self.cpu_index = cpu_index
             self.passage_embedding2id = passage_embedding2id
             self.docid2docno = docid2docno
+
+    #allows a colbert ranker to be built from a dataset
+    def from_dataset(dataset : Union[str,Dataset], 
+            variant : str = None, 
+            version='latest',            
+            **kwargs):
+
+        from pyterrier.batchretrieve import _from_dataset
+
+        #ANCERetrieval doesnt match quite the expectations, so we can use a wrapper fn
+        def _construct(folder, **kwargs):
+            import os
+            checkpoint = kwargs.get('checkpoint')
+            del(kwargs['checkpoint'])
+            return ANCERetrieval(checkpoint, folder, **kwargs)
+
+        return _from_dataset(dataset, 
+                             variant=variant, 
+                             version=version, 
+                             clz=_construct)
 
     def __str__(self):
         return "ANCE"
