@@ -72,13 +72,15 @@ Checkout out the notebooks, even on Colab:
 
  - [Vaswani Corpus](pyterrier_ance_vaswani.ipynb) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/terrierteam/pyterrier_ance/blob/master/pyterrier_ance_vaswani.ipynb)
 
+The [Terrier data repository](http://data.terrier.org/) contains ANCE indices for several corpora, including Vaswani and MSMARCO Passage v1.
+
 ## Implementation Details
 
 We use a [fork-ed copy of ANCE](https://github.com/cmacdonald/ANCE/) that makes it pip installable, and addresses other quibbles.
 
 ## References
 
-  - [Xiong20] Approximate Nearest Neighbor Negative Contrastive Learning for Dense Text Retrieval. Lee Xiong*, Chenyan Xiong*, Ye Li, Kwok-Fung Tang, Jialin Liu, Paul Bennett, Junaid Ahmed, Arnold Overwijk. https://arxiv.org/pdf/2007.00808.pdf
+  - [Xiong20] Approximate Nearest Neighbor Negative Contrastive Learning for Dense Text Retrieval. Lee Xiong, Chenyan Xiong, Ye Li, Kwok-Fung Tang, Jialin Liu, Paul Bennett, Junaid Ahmed, Arnold Overwijk. https://arxiv.org/pdf/2007.00808.pdf
   - [Macdonald20]: Craig Macdonald, Nicola Tonellotto. Declarative Experimentation inInformation Retrieval using PyTerrier. Craig Macdonald and Nicola Tonellotto. In Proceedings of ICTIR 2020. https://arxiv.org/abs/2007.14271
 
 ## Credits
