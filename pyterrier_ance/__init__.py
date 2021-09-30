@@ -189,7 +189,6 @@ class ANCERetrieval(TransformerBase):
         #ANCERetrieval doesnt match quite the expectations, so we can use a wrapper fn
         def _ANCERetrievalconstruct(folder, **kwargs):
             import os
-            print(kwargs)
             checkpoint_path = kwargs.get('checkpoint_path')
             del kwargs['checkpoint_path']
             return ANCERetrieval(checkpoint_path, folder, **kwargs)
@@ -197,7 +196,7 @@ class ANCERetrieval(TransformerBase):
         return _from_dataset(dataset, 
                              variant=variant, 
                              version=version, 
-                             clz=_ANCERetrievalconstruct)
+                             clz=_ANCERetrievalconstruct, **kwargs)
 
     def __str__(self):
         return "ANCE"
