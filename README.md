@@ -66,6 +66,24 @@ ance_text_scorer = pyterrier_ance.ANCETextScorer("/path/to/checkpoint")
 # bm25 >> pt.text.get_text(dataset, 'text') >> ance_text_scorer
 ```
 
+## Documents longer than Passages
+
+If your documents are longer than passages, you should apply passaging to them before indexing:
+
+```python
+
+# indexing
+dataset = pt.get_dataset("irds:vaswani")
+import pyterrier_ance
+indexer = pt.text.sliding("text", prepend_attr=None) >> pyterrier_ance.ANCEIndexer("/path/to/checkpoint", "/path/to/anceindex")
+indexer.index(dataset.get_corpus_iter())
+
+# retrieval 
+
+ance_maxp = pyterrier_ance.ANCERetrieval("/path/to/checkpoint", "/path/to/anceindex") >> pt.text.max_passage()
+
+```
+
 ## Examples
 
 Checkout out the notebooks, even on Colab:
