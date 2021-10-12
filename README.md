@@ -68,7 +68,7 @@ ance_text_scorer = pyterrier_ance.ANCETextScorer("/path/to/checkpoint")
 
 ## Documents longer than Passages
 
-If your documents are longer than passages, you should apply passaging to them before indexing:
+If your documents are longer than passages, you should apply passaging to them before indexing, and max passage (say) during retrieval:
 
 ```python
 
