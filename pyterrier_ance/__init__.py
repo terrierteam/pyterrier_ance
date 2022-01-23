@@ -484,7 +484,6 @@ class ANCEPRF(_ANCEModelBase):
         self.text_field = text_field
 
     def transform(self, df):
-        print(df.columns)
         assert "docno" in df.columns
         assert "qid" in df.columns
         assert "query" in df.columns 
