@@ -278,7 +278,8 @@ class ANCERetrieval(TransformerBase):
 
 
 class _ANCEModelBase(TransformerBase):
-    def __init__(self, checkpoint_path=None):
+    def __init__(self, checkpoint_path=None, verbose=False):
+        self.verbose = verbose
         self.args = type('', (), {})()
         args = self.args
         args.local_rank = -1
@@ -491,7 +492,9 @@ class ANCEPRF(_ANCEModelBase):
 
         new_qids = []
         new_query_embs = []
-        for qid, group in df.groupby("qid"):
+        iter = df.groupby("qid")
+        iter = pt.tqdm(iter, desc='PRF', unit='q') if self.verbose else iter
+        for qid, group in iter:
             k = min(self.k, len(group))
             passage_texts = group.sort_values("rank").head(k)[self.text_field].values
             #this line from pyserini
