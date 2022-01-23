@@ -1,4 +1,5 @@
-python-terrier>=0.7.0
+python-terrier>=0.8.0
 pandas
-git+https://github.com/cmacdonald/ANCE.git
+git+https://github.com/cmacdonald/ANCE.git@upgrade_transformers
 tensorboardX
+transformers>=4.6.0
