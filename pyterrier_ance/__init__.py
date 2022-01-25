@@ -278,7 +278,7 @@ class ANCERetrieval(TransformerBase):
 
 
 class _ANCEModelBase(TransformerBase):
-    def __init__(self, checkpoint_path=None, verbose=False):
+    def __init__(self, checkpoint_path=None, verbose=False, gpu=True):
         self.verbose = verbose
         self.args = type('', (), {})()
         args = self.args
@@ -289,9 +289,9 @@ class _ANCEModelBase(TransformerBase):
         args.max_query_length = 64
         args.max_seq_length = 128
         args.per_gpu_eval_batch_size = 128
-        args.device = torch.device("cuda" if torch.cuda.is_available() and not args.no_cuda else "cpu")
-        args.n_gpu = torch.cuda.device_count()
 
+        args.device = torch.device("cuda" if torch.cuda.is_available() and gpu else "cpu")
+        args.n_gpu = torch.cuda.device_count()
         config, tokenizer, model = _load_model(self.args, checkpoint_path)
         self.model = model
         self.tokenizer = tokenizer
@@ -403,7 +403,7 @@ class ANCEQueryEncoder(_ANCEModelBase):
         # project out the query representations (see comment above)
         query_embeddings = query_embeddings[query_idxs]
 
-        return df.assign(query_emb=query_embeddings)
+        return df.assign(query_emb=[query_embeddings])
 
 class ANCETextEncoder(_ANCEModelBase):
 
@@ -431,7 +431,6 @@ class ANCETextEncoder(_ANCEModelBase):
 
         passage_embeddings, _ = StreamInferenceDoc(self.args, self.model, GetProcessingFn(
             self.args, query=False), "transform", docs, is_query_inference=False)
-        print(passage_embeddings.shape)
         rtr = df.copy()
         rtr["doc_emb"] = passage_embeddings
         return rtr
@@ -508,7 +507,27 @@ class ANCEPRF(_ANCEModelBase):
         rtr = df[["qid", "query"]].drop_duplicates().merge(qembs_df, on='qid')
         return rtr
 
-    def encode(self, prf_query : str):
+    def encode(self, prf_query):
+        import transformers
+        return self.encode_v2(prf_query) if transformers.__version__ < '3' else self.encode_v3(prf_query)
+
+    def encode_v2(self, prf_query : str):
+        import torch
+        inputs = self.tokenizer.encode(
+            prf_query,
+            max_length=512,
+            #padding='longest',
+            #truncation=True,
+            add_special_tokens=False,
+            return_tensors='pt'
+        )
+        inputs = inputs.to(self.args.device)
+        args = [inputs, torch.ones_like(inputs)]
+
+        embeddings = self.model(*args).detach().cpu()
+        return embeddings.flatten()
+
+    def encode_v3(self, prf_query : str):        
         inputs = self.tokenizer(
             [prf_query],
             max_length=512,
@@ -517,6 +536,6 @@ class ANCEPRF(_ANCEModelBase):
             add_special_tokens=False,
             return_tensors='pt'
         )
-        #inputs.to(self.device)
+        inputs = inputs.to(self.args.device)
         embeddings = self.model(inputs["input_ids"], inputs["attention_mask"]).detach().cpu()
         return embeddings.flatten()
