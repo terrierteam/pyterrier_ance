@@ -496,6 +496,7 @@ class ANCEPRF(_ANCEModelBase):
         for qid, group in iter:
             k = min(self.k, len(group))
             passage_texts = group.sort_values("rank").head(k)[self.text_field].values
+            passage_texts = [group.iloc[0].query] + passage_texts
             #this line from pyserini
             full_text = f'{self.tokenizer.cls_token}{self.tokenizer.sep_token.join(passage_texts)}{self.tokenizer.sep_token}'
             new_qmeb = self.encode(full_text)
