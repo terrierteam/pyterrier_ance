@@ -300,7 +300,7 @@ class _ANCEModelBase(TransformerBase):
 class ANCETextScorer(_ANCEModelBase):
 
     def __init__(self, text_field='text', **kwargs):
-        super().__init(**kwargs)        
+        super().__init__(**kwargs)        
         self.text_field = text_field
 
     def __str__(self):
