@@ -31,7 +31,7 @@ def _load_model(args, checkpoint_path):
 
 class ANCEIndexer(TransformerBase):
     
-    def __init__(self, checkpoint_path, index_path, num_docs=None, verbose=True, text_attr="text", segment_size=500_000):
+    def __init__(self, checkpoint_path, index_path, num_docs=None, verbose=True, text_attr="text", segment_size=500_000, **kwargs):
         self.index_path = index_path
         self.checkpoint_path = checkpoint_path
         self.verbose=verbose
@@ -40,6 +40,20 @@ class ANCEIndexer(TransformerBase):
             raise ValueError("if verbose=True, num_docs must be set")
         self.segment_size = segment_size
         self.text_attr = text_attr
+
+        args = type('', (), {})()
+        args.local_rank = -1
+        args.model_type = 'rdot_nll'
+        args.cache_dir  = None
+        args.no_cuda = False
+        args.max_query_length = 64
+        args.max_seq_length = 128
+
+        args.per_gpu_eval_batch_size = 128
+        args.device = torch.device("cuda" if torch.cuda.is_available() and not args.no_cuda else "cpu")
+        args.n_gpu = torch.cuda.device_count()
+        args.__dict__.update(kwargs)
+        self.args = args
         
     def index(self, generator):
         from ance.utils.util import pad_input_ids
@@ -55,20 +69,8 @@ class ANCEIndexer(TransformerBase):
 
         import os
         os.makedirs(self.index_path)
-        
-        args = type('', (), {})()
-        args.local_rank = -1
-        args.model_type = 'rdot_nll'
-        args.cache_dir  = None
-        args.no_cuda = False
-        args.max_query_length = 64
-        args.max_seq_length = 128
 
-        args.per_gpu_eval_batch_size = 128
-        args.device = torch.device("cuda" if torch.cuda.is_available() and not args.no_cuda else "cpu")
-        args.n_gpu = torch.cuda.device_count()
-
-        config, tokenizer, model = _load_model(args, self.checkpoint_path)
+        config, tokenizer, model = _load_model(self.args, self.checkpoint_path)
 
         
         docid2docno = []
@@ -84,10 +86,10 @@ class ANCEIndexer(TransformerBase):
                 passage = tokenizer.encode(
                     contents,
                     add_special_tokens=True,
-                    max_length=args.max_seq_length,
+                    max_length=self.args.max_seq_length,
                 )
-                passage_len = min(len(passage), args.max_seq_length)
-                input_id_b = pad_input_ids(passage, args.max_seq_length)
+                passage_len = min(len(passage), self.args.max_seq_length)
+                input_id_b = pad_input_ids(passage, self.args.max_seq_length)
                 yield passage_len, input_id_b
         
         segment=-1
@@ -96,8 +98,8 @@ class ANCEIndexer(TransformerBase):
             segment += 1
             
             print("Segment %d" % segment)
-            passage_embedding, passage_embedding2id = StreamInferenceDoc(args, model, GetProcessingFn(
-                args, query=False), "passages", gengen, is_query_inference=False)
+            passage_embedding, passage_embedding2id = StreamInferenceDoc(self.args, model, GetProcessingFn(
+                self.args, query=False), "passages", gengen, is_query_inference=False)
         
             dim=passage_embedding.shape[1]
             faiss.omp_set_num_threads(16)
@@ -133,7 +135,7 @@ import numpy as np
 
 class ANCERetrieval(TransformerBase):
 
-    def __init__(self, checkpoint_path=None, index_path=None, cpu_index=None, passage_embedding2id = None, docid2docno=None, num_results=100, query_encoded=False):
+    def __init__(self, checkpoint_path=None, index_path=None, cpu_index=None, passage_embedding2id = None, docid2docno=None, num_results=100, query_encoded=False, **kwargs):
         self.args = type('', (), {})()
         self.query_encoded = query_encoded
         args = self.args
@@ -146,6 +148,7 @@ class ANCERetrieval(TransformerBase):
         args.per_gpu_eval_batch_size = 128
         args.device = torch.device("cuda" if torch.cuda.is_available() and not args.no_cuda else "cpu")
         args.n_gpu = torch.cuda.device_count()
+        args.__dict__.update(kwargs)
         
         self.checkpoint_path = checkpoint_path
         self.num_results = num_results
@@ -278,7 +281,7 @@ class ANCERetrieval(TransformerBase):
 
 
 class _ANCEModelBase(TransformerBase):
-    def __init__(self, checkpoint_path=None, verbose=False, gpu=True):
+    def __init__(self, checkpoint_path=None, verbose=False, gpu=True, text_field='text', **kwargs):
         self.verbose = verbose
         self.args = type('', (), {})()
         args = self.args
@@ -289,9 +292,9 @@ class _ANCEModelBase(TransformerBase):
         args.max_query_length = 64
         args.max_seq_length = 128
         args.per_gpu_eval_batch_size = 128
-
         args.device = torch.device("cuda" if torch.cuda.is_available() and gpu else "cpu")
         args.n_gpu = torch.cuda.device_count()
+        args.__dict__.update(kwargs)
         config, tokenizer, model = _load_model(self.args, checkpoint_path)
         self.model = model
         self.tokenizer = tokenizer

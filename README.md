@@ -105,3 +105,5 @@ We use a [fork-ed copy of ANCE](https://github.com/cmacdonald/ANCE/) that makes 
 
 - Craig Macdonald, University of Glasgow
 - Nicola Tonellotto, University of Pisa
+- Sean MacAvaney, University of Glasgow
+- Dany Haddad, University of Texas
