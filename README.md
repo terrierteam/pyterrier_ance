@@ -22,11 +22,13 @@ On Anaconda:
     # GPU(+CPU) version
     $ conda install -c pytorch faiss-gpu
 
-For ANCE, the CPU version is sufficient.
+For ANCE, the CPU version is sufficient (For small usage.)
 
 ## Indexing
 
-You will need a pre-trained ANCE checkpoint. There are several available from the [ANCE repository](https://github.com/microsoft/ANCE/#results).
+~~You will need a pre-trained ANCE checkpoint. There are several available from the [ANCE repository](https://github.com/microsoft/ANCE/#results).~~
+
+The files has been deleted in the main ANCE Repo. You can download the ANCE checkpoitn from [Google Drive](https://drive.google.com/file/d/1IHqi2EpU3hdoa06LWbpoAzg21oVT7e2o/view?usp=share_link) (the link is provided from an issue in the main repo [link](https://github.com/microsoft/ANCE/issues/23))
 
 Then, indexing is as easy as instantiating the indexer, pointing at the (unzipped) checkpoint and the directory in which you wish to create an index
 
@@ -89,6 +91,9 @@ ance_maxp = pyterrier_ance.ANCERetrieval("/path/to/checkpoint", "/path/to/ancein
 Checkout out the notebooks, even on Colab:
 
  - [Vaswani Corpus](pyterrier_ance_vaswani.ipynb) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/terrierteam/pyterrier_ance/blob/master/pyterrier_ance_vaswani.ipynb)
+
+ - [Index MSMarco Passages](examples/indexer.py)
+ - [Retrieve Large Query set (> 500k)](examples/retriever.py)
 
 The [Terrier data repository](http://data.terrier.org/) contains ANCE indices for several corpora, including Vaswani and MSMARCO Passage v1.
 

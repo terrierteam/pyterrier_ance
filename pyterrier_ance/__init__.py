@@ -49,7 +49,9 @@ class ANCEIndexer(TransformerBase):
 
         args.per_gpu_eval_batch_size = 128
         args.device = torch.device("cuda" if torch.cuda.is_available() and not args.no_cuda else "cpu")
+        print(f"Device: {args.device}")
         args.n_gpu = torch.cuda.device_count()
+        print(f"Total number of GPU: {args.n_gpu}")
         args.__dict__.update(kwargs)
         self.args = args
         
@@ -66,7 +68,7 @@ class ANCEIndexer(TransformerBase):
         ance.drivers.run_ann_data_gen.tqdm = pt.tqdm
 
         import os
-        os.makedirs(self.index_path)
+        os.makedirs(self.index_path, exist_ok=True)
 
         config, tokenizer, model = _load_model(self.args, self.checkpoint_path)
 
@@ -167,10 +169,14 @@ class ANCERetrieval(TransformerBase):
             self.shard_offsets = []
             self.passage_embedding2id = []
             offset=0
+            if args.n_gpu > 0:
+                resources = [faiss.StandardGpuResources() for i in range(1)]
             for i, shard_size in enumerate(tqdm(self.shard_sizes, desc="Loading shards", unit="shard")):                
                 faiss_file = os.path.join(index_path, str(i) + ".faiss")
                 lookup_file = os.path.join(index_path, str(i) + ".docids.pkl")
                 index = faiss.read_index(faiss_file)
+                if args.n_gpu > 0:
+                    index = faiss.index_cpu_to_gpu_multiple_py(resources=resources, index=index)
                 self.cpu_index.append(index)
                 self.shard_offsets.append(offset)
                 offset += shard_size
@@ -208,7 +214,8 @@ class ANCERetrieval(TransformerBase):
         from pyterrier import tqdm
         queries=[]
         qid2q = {}
-        for q, qid in zip(topics["query"].to_list(), topics["qid"].to_list()):
+        topics_length = len(topics)
+        for q, qid in tqdm(zip(topics["query"].to_list(), topics["qid"].to_list()), desc='Tokenizing...', total=topics_length):
             passage = self.tokenizer.encode(
                 q,
                 add_special_tokens=True,
